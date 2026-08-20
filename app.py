@@ -1,5 +1,7 @@
 # ============================================================
 # Energy-Signature Based Occupancy Sensing — Software Demo
+# Minimalistic, professional dashboard UI.
+#
 # Uses simulated power readings (standing in for the ESP32 +
 # sensor hardware, which isn't built yet) so the full software
 # pipeline can be shown as progress.
@@ -18,21 +20,126 @@ import random
 # ------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------
-ROOM_IDS = ["room_1", "room_2"]
+ROOM_IDS = ["Room 1", "Room 2"]
 
-# How many past readings to keep in memory per room, for the chart
-HISTORY_LENGTH = 60
+HISTORY_LENGTH = 60          # readings kept per room, for the chart
+WINDOW_SIZE = 10             # rolling window for feature extraction
 
-# Window size used to compute rolling features for classification
-WINDOW_SIZE = 10
-
-# Thresholds — placeholders, will be tuned once real sensor data exists
 BASELINE_POWER_THRESHOLD = 15.0   # Watts above idle baseline
 VARIANCE_THRESHOLD = 5.0          # fluctuation level
 
-st.set_page_config(page_title="Energy-Signature Occupancy Sensing", layout="wide")
-st.title("Energy-Signature Based Room Occupancy Sensing")
-st.caption("Software demo — running on simulated sensor data (hardware in progress)")
+st.set_page_config(
+    page_title="Occupancy Sensing Dashboard",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+
+# ------------------------------------------------------------
+# STYLE: minimalistic, professional CSS
+# ------------------------------------------------------------
+st.markdown("""
+<style>
+    /* Overall page */
+    .main {
+        background-color: #0E1117;
+    }
+    .block-container {
+        padding-top: 2.5rem;
+        padding-bottom: 3rem;
+        max-width: 1100px;
+    }
+
+    /* Header */
+    .app-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #FAFAFA;
+        margin-bottom: 0.1rem;
+        letter-spacing: -0.02em;
+    }
+    .app-subtitle {
+        font-size: 0.9rem;
+        color: #8A8F98;
+        margin-bottom: 2rem;
+        font-weight: 400;
+    }
+
+    /* Room card container */
+    .room-card {
+        background-color: #14161C;
+        border: 1px solid #23262F;
+        border-radius: 10px;
+        padding: 1.4rem 1.6rem;
+        margin-bottom: 1.2rem;
+    }
+    .room-name {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #FAFAFA;
+        margin-bottom: 0.9rem;
+    }
+
+    /* Status pill */
+    .status-pill {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+    .status-occupied {
+        background-color: rgba(46, 160, 67, 0.15);
+        color: #3FB950;
+        border: 1px solid rgba(63, 185, 80, 0.3);
+    }
+    .status-unoccupied {
+        background-color: rgba(139, 148, 158, 0.15);
+        color: #8B949E;
+        border: 1px solid rgba(139, 148, 158, 0.3);
+    }
+
+    /* Metric labels */
+    .metric-label {
+        font-size: 0.72rem;
+        color: #6E7681;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.1rem;
+    }
+    .metric-value {
+        font-size: 1.25rem;
+        color: #FAFAFA;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Footer note */
+    .footer-note {
+        font-size: 0.78rem;
+        color: #6E7681;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    /* Hide default Streamlit chrome */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ------------------------------------------------------------
+# HEADER
+# ------------------------------------------------------------
+st.markdown('<div class="app-title">Room Occupancy Sensing</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="app-subtitle">Energy-signature based detection — live monitoring (simulated data, hardware in progress)</div>',
+    unsafe_allow_html=True
+)
 
 
 # ------------------------------------------------------------
@@ -61,14 +168,13 @@ def simulate_reading(room_id):
     simulated_occupied = random.random() < 0.5
 
     if simulated_occupied:
-        base = random.uniform(20, 40)       # higher baseline
-        noise = random.uniform(-8, 8)        # more fluctuation
+        base = random.uniform(20, 40)
+        noise = random.uniform(-8, 8)
     else:
-        base = random.uniform(4, 9)          # low idle baseline
-        noise = random.uniform(-1, 1)        # very little fluctuation
+        base = random.uniform(4, 9)
+        noise = random.uniform(-1, 1)
 
-    power = max(0.0, base + noise)
-    return power
+    return max(0.0, base + noise)
 
 
 # ------------------------------------------------------------
@@ -87,7 +193,6 @@ def compute_features(readings, window_size=WINDOW_SIZE):
 
     mean_power = recent_array.mean()
     variance = recent_array.var() if len(recent_array) > 1 else 0.0
-
     peak_count = int(np.sum(recent_array > (mean_power + variance)))
 
     return {
@@ -108,11 +213,7 @@ def classify_occupancy(features):
     """
     is_high_power = features["mean_power"] > BASELINE_POWER_THRESHOLD
     is_fluctuating = features["variance"] > VARIANCE_THRESHOLD
-
-    if is_high_power and is_fluctuating:
-        return "Occupied"
-    else:
-        return "Unoccupied"
+    return "Occupied" if (is_high_power and is_fluctuating) else "Unoccupied"
 
 
 # ------------------------------------------------------------
@@ -127,36 +228,53 @@ for room_id in ROOM_IDS:
 
 
 # ------------------------------------------------------------
-# STEP 6: Dashboard layout — one section per room
+# STEP 6: Dashboard layout — one clean card per room
 # ------------------------------------------------------------
 for room_id in ROOM_IDS:
-    st.subheader(f"Room: {room_id}")
-
     readings = st.session_state.history[room_id]
     features = compute_features(readings)
     status = classify_occupancy(features)
 
-    col1, col2 = st.columns([1, 3])
+    status_class = "status-occupied" if status == "Occupied" else "status-unoccupied"
 
-    with col1:
-        if status == "Occupied":
-            st.success(f"Status: {status}")
-        else:
-            st.error(f"Status: {status}")
+    st.markdown('<div class="room-card">', unsafe_allow_html=True)
 
-        st.metric("Avg Power (W)", f"{features['mean_power']:.1f}")
-        st.metric("Variance", f"{features['variance']:.1f}")
-        st.metric("Peak Count", features["peak_count"])
+    header_col, status_col = st.columns([4, 1])
+    with header_col:
+        st.markdown(f'<div class="room-name">{room_id}</div>', unsafe_allow_html=True)
+    with status_col:
+        st.markdown(
+            f'<div style="text-align:right;"><span class="status-pill {status_class}">{status}</span></div>',
+            unsafe_allow_html=True
+        )
 
-    with col2:
-        chart_df = pd.DataFrame({"power": readings})
-        st.line_chart(chart_df["power"])
+    metric_col, chart_col = st.columns([1, 3])
 
-    st.divider()
+    with metric_col:
+        st.markdown(f"""
+            <div class="metric-label">Avg Power</div>
+            <div class="metric-value">{features['mean_power']:.1f} W</div>
+            <br>
+            <div class="metric-label">Variance</div>
+            <div class="metric-value">{features['variance']:.1f}</div>
+            <br>
+            <div class="metric-label">Peak Count</div>
+            <div class="metric-value">{features['peak_count']}</div>
+        """, unsafe_allow_html=True)
+
+    with chart_col:
+        chart_df = pd.DataFrame({"Power (W)": readings})
+        st.line_chart(chart_df, height=180)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ------------------------------------------------------------
-# STEP 7: Auto-refresh so the dashboard updates continuously
+# STEP 7: Footer + auto-refresh
 # ------------------------------------------------------------
-st.caption("Dashboard auto-refreshes every 2 seconds (simulated live data).")
+st.markdown(
+    '<div class="footer-note">Auto-refreshing every 2 seconds · Simulated data pending hardware integration</div>',
+    unsafe_allow_html=True
+)
 time.sleep(2)
 st.rerun()

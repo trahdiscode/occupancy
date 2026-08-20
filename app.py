@@ -40,11 +40,10 @@ st.set_page_config(
 # ------------------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
     .main {
         background-color: #0A0B0F;
@@ -257,70 +256,62 @@ def classify_occupancy(features):
 
 
 # ------------------------------------------------------------
-# STEP 5: Update history with a new simulated reading per room
+# Auto-refreshing fragment: updates readings + redraws dashboard
+# every 2 seconds, without re-running the entire script/page.
 # ------------------------------------------------------------
-for room_id in ROOM_IDS:
-    new_reading = simulate_reading(room_id)
-    st.session_state.history[room_id].append(new_reading)
+@st.fragment(run_every=2)
+def render_dashboard():
+    for room_id in ROOM_IDS:
+        new_reading = simulate_reading(room_id)
+        st.session_state.history[room_id].append(new_reading)
 
-    if len(st.session_state.history[room_id]) > HISTORY_LENGTH:
-        st.session_state.history[room_id] = st.session_state.history[room_id][-HISTORY_LENGTH:]
+        if len(st.session_state.history[room_id]) > HISTORY_LENGTH:
+            st.session_state.history[room_id] = st.session_state.history[room_id][-HISTORY_LENGTH:]
 
+    for room_id in ROOM_IDS:
+        readings = st.session_state.history[room_id]
+        features = compute_features(readings)
+        status = classify_occupancy(features)
+        status_class = "status-occupied" if status == "Occupied" else "status-unoccupied"
 
-# ------------------------------------------------------------
-# STEP 6: Dashboard layout — one clean card per room
-# ------------------------------------------------------------
-for room_id in ROOM_IDS:
-    readings = st.session_state.history[room_id]
-    features = compute_features(readings)
-    status = classify_occupancy(features)
+        st.markdown('<div class="room-card">', unsafe_allow_html=True)
 
-    status_class = "status-occupied" if status == "Occupied" else "status-unoccupied"
+        header_col, status_col = st.columns([4, 1])
+        with header_col:
+            st.markdown(f'<div class="room-name">{room_id}</div>', unsafe_allow_html=True)
+        with status_col:
+            st.markdown(
+                f'<div style="text-align:right;"><span class="status-pill {status_class}">{status}</span></div>',
+                unsafe_allow_html=True
+            )
 
-    st.markdown('<div class="room-card">', unsafe_allow_html=True)
+        st.write("")
 
-    header_col, status_col = st.columns([4, 1])
-    with header_col:
-        st.markdown(f'<div class="room-name">{room_id}</div>', unsafe_allow_html=True)
-    with status_col:
-        st.markdown(
-            f'<div style="text-align:right;"><span class="status-pill {status_class}">{status}</span></div>',
-            unsafe_allow_html=True
-        )
+        metric_col, chart_col = st.columns([1, 3])
+        with metric_col:
+            st.markdown(f"""
+                <div class="metric-block">
+                    <div class="metric-label">Avg Power</div>
+                    <div class="metric-value">{features['mean_power']:.1f} W</div>
+                </div>
+                <div class="metric-block">
+                    <div class="metric-label">Variance</div>
+                    <div class="metric-value">{features['variance']:.1f}</div>
+                </div>
+                <div class="metric-block">
+                    <div class="metric-label">Peak Count</div>
+                    <div class="metric-value">{features['peak_count']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        with chart_col:
+            chart_df = pd.DataFrame({"Power (W)": readings})
+            st.line_chart(chart_df, height=190)
 
-    st.write("")  # small vertical spacer
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    metric_col, chart_col = st.columns([1, 3])
+    st.markdown(
+        '<div class="footer-note">Auto-refreshing every 2 seconds &nbsp;·&nbsp; Simulated data pending hardware integration</div>',
+        unsafe_allow_html=True
+    )
 
-    with metric_col:
-        st.markdown(f"""
-            <div class="metric-block">
-                <div class="metric-label">Avg Power</div>
-                <div class="metric-value">{features['mean_power']:.1f} W</div>
-            </div>
-            <div class="metric-block">
-                <div class="metric-label">Variance</div>
-                <div class="metric-value">{features['variance']:.1f}</div>
-            </div>
-            <div class="metric-block">
-                <div class="metric-label">Peak Count</div>
-                <div class="metric-value">{features['peak_count']}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with chart_col:
-        chart_df = pd.DataFrame({"Power (W)": readings})
-        st.line_chart(chart_df, height=190)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ------------------------------------------------------------
-# STEP 7: Footer + auto-refresh
-# ------------------------------------------------------------
-st.markdown(
-    '<div class="footer-note">Auto-refreshing every 2 seconds &nbsp;·&nbsp; Simulated data pending hardware integration</div>',
-    unsafe_allow_html=True
-)
-time.sleep(2)
-st.rerun()
+render_dashboard()

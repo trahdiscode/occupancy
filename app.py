@@ -1,6 +1,6 @@
 # ============================================================
 # Energy-Signature Based Occupancy Sensing — Software Demo
-# Minimalistic, professional dashboard UI.
+# Clean, minimal, professional dashboard UI.
 #
 # Uses simulated power readings (standing in for the ESP32 +
 # sensor hardware, which isn't built yet) so the full software
@@ -36,92 +36,125 @@ st.set_page_config(
 
 
 # ------------------------------------------------------------
-# STYLE: minimalistic, professional CSS
+# STYLE: minimal, editorial, gradient-accented
 # ------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Overall page */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
     .main {
-        background-color: #0E1117;
+        background-color: #0A0B0F;
     }
     .block-container {
-        padding-top: 2.5rem;
-        padding-bottom: 3rem;
-        max-width: 1100px;
+        padding-top: 3.5rem;
+        padding-bottom: 4rem;
+        max-width: 1080px;
     }
 
-    /* Header */
-    .app-title {
-        font-size: 1.6rem;
+    /* Hero header */
+    .hero-eyebrow {
+        font-size: 0.75rem;
         font-weight: 600;
-        color: #FAFAFA;
-        margin-bottom: 0.1rem;
-        letter-spacing: -0.02em;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6C7CFF;
+        margin-bottom: 0.6rem;
     }
-    .app-subtitle {
-        font-size: 0.9rem;
-        color: #8A8F98;
-        margin-bottom: 2rem;
+    .hero-title {
+        font-size: 2.6rem;
+        font-weight: 800;
+        color: #F5F6FA;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin-bottom: 0.6rem;
+    }
+    .hero-subtitle {
+        font-size: 1rem;
+        color: #80869C;
         font-weight: 400;
+        margin-bottom: 3rem;
+        max-width: 620px;
+        line-height: 1.5;
     }
 
-    /* Room card container */
+    /* Room card */
     .room-card {
-        background-color: #14161C;
-        border: 1px solid #23262F;
-        border-radius: 10px;
-        padding: 1.4rem 1.6rem;
-        margin-bottom: 1.2rem;
+        background: linear-gradient(180deg, #12141C 0%, #0F1117 100%);
+        border: 1px solid #1E2130;
+        border-radius: 14px;
+        padding: 1.8rem 2rem;
+        margin-bottom: 1.4rem;
+        transition: border-color 0.2s ease;
+    }
+    .room-card:hover {
+        border-color: #2A2E42;
     }
     .room-name {
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #FAFAFA;
-        margin-bottom: 0.9rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #F5F6FA;
+        letter-spacing: -0.01em;
     }
 
     /* Status pill */
     .status-pill {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
+        padding: 0.3rem 0.85rem;
         border-radius: 20px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
     }
     .status-occupied {
-        background-color: rgba(46, 160, 67, 0.15);
-        color: #3FB950;
-        border: 1px solid rgba(63, 185, 80, 0.3);
+        background: linear-gradient(135deg, rgba(108,124,255,0.18), rgba(63,185,80,0.18));
+        color: #6EE787;
+        border: 1px solid rgba(110,231,135,0.35);
     }
     .status-unoccupied {
-        background-color: rgba(139, 148, 158, 0.15);
-        color: #8B949E;
-        border: 1px solid rgba(139, 148, 158, 0.3);
+        background-color: rgba(128, 134, 156, 0.1);
+        color: #80869C;
+        border: 1px solid rgba(128,134,156,0.25);
     }
 
-    /* Metric labels */
+    /* Metrics */
     .metric-label {
-        font-size: 0.72rem;
-        color: #6E7681;
+        font-size: 0.68rem;
+        color: #565C72;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-bottom: 0.1rem;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
     }
     .metric-value {
-        font-size: 1.25rem;
-        color: #FAFAFA;
-        font-weight: 600;
+        font-size: 1.4rem;
+        color: #F5F6FA;
+        font-weight: 700;
         font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+    }
+    .metric-block {
+        margin-bottom: 1.3rem;
     }
 
-    /* Footer note */
+    /* Divider line under header */
+    .header-divider {
+        border: none;
+        border-top: 1px solid #1E2130;
+        margin: 0 0 2.5rem 0;
+    }
+
+    /* Footer */
     .footer-note {
-        font-size: 0.78rem;
-        color: #6E7681;
-        margin-top: 1.5rem;
+        font-size: 0.75rem;
+        color: #4A4F63;
+        margin-top: 2rem;
         text-align: center;
+        letter-spacing: 0.02em;
     }
 
     /* Hide default Streamlit chrome */
@@ -135,11 +168,14 @@ st.markdown("""
 # ------------------------------------------------------------
 # HEADER
 # ------------------------------------------------------------
-st.markdown('<div class="app-title">Room Occupancy Sensing</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-eyebrow">Innovative Design Project</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-title">Room Occupancy Sensing</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="app-subtitle">Energy-signature based detection — live monitoring (simulated data, hardware in progress)</div>',
+    '<div class="hero-subtitle">Non-intrusive occupancy detection via real-time energy-signature analysis. '
+    'Currently running on simulated sensor data while hardware integration is in progress.</div>',
     unsafe_allow_html=True
 )
+st.markdown('<hr class="header-divider">', unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------
@@ -148,10 +184,10 @@ st.markdown(
 if "history" not in st.session_state:
     st.session_state.history = {}
 
-# Ensure every room has an entry, even if ROOM_IDS changes later
 for room_id in ROOM_IDS:
     if room_id not in st.session_state.history:
         st.session_state.history[room_id] = []
+
 
 # ------------------------------------------------------------
 # STEP 2: Simulate a power reading for a room
@@ -252,23 +288,29 @@ for room_id in ROOM_IDS:
             unsafe_allow_html=True
         )
 
+    st.write("")  # small vertical spacer
+
     metric_col, chart_col = st.columns([1, 3])
 
     with metric_col:
         st.markdown(f"""
-            <div class="metric-label">Avg Power</div>
-            <div class="metric-value">{features['mean_power']:.1f} W</div>
-            <br>
-            <div class="metric-label">Variance</div>
-            <div class="metric-value">{features['variance']:.1f}</div>
-            <br>
-            <div class="metric-label">Peak Count</div>
-            <div class="metric-value">{features['peak_count']}</div>
+            <div class="metric-block">
+                <div class="metric-label">Avg Power</div>
+                <div class="metric-value">{features['mean_power']:.1f} W</div>
+            </div>
+            <div class="metric-block">
+                <div class="metric-label">Variance</div>
+                <div class="metric-value">{features['variance']:.1f}</div>
+            </div>
+            <div class="metric-block">
+                <div class="metric-label">Peak Count</div>
+                <div class="metric-value">{features['peak_count']}</div>
+            </div>
         """, unsafe_allow_html=True)
 
     with chart_col:
         chart_df = pd.DataFrame({"Power (W)": readings})
-        st.line_chart(chart_df, height=180)
+        st.line_chart(chart_df, height=190)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -277,7 +319,7 @@ for room_id in ROOM_IDS:
 # STEP 7: Footer + auto-refresh
 # ------------------------------------------------------------
 st.markdown(
-    '<div class="footer-note">Auto-refreshing every 2 seconds · Simulated data pending hardware integration</div>',
+    '<div class="footer-note">Auto-refreshing every 2 seconds &nbsp;·&nbsp; Simulated data pending hardware integration</div>',
     unsafe_allow_html=True
 )
 time.sleep(2)

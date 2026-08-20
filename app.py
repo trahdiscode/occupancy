@@ -45,8 +45,20 @@ st.markdown("""
 }
 
     .main {
-        background-color: #0A0B0F;
-    }
+    background-color: #0A0B0F;
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(108, 124, 255, 0.10) 0%, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(110, 231, 135, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(108, 124, 255, 0.06) 0%, transparent 50%);
+    background-size: 200% 200%;
+    animation: drift 25s ease-in-out infinite;
+}
+
+@keyframes drift {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+}
     .block-container {
         padding-top: 3.5rem;
         padding-bottom: 4rem;

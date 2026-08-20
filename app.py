@@ -146,8 +146,12 @@ st.markdown(
 # STEP 1: Initialize session state to hold reading history
 # ------------------------------------------------------------
 if "history" not in st.session_state:
-    st.session_state.history = {room_id: [] for room_id in ROOM_IDS}
+    st.session_state.history = {}
 
+# Ensure every room has an entry, even if ROOM_IDS changes later
+for room_id in ROOM_IDS:
+    if room_id not in st.session_state.history:
+        st.session_state.history[room_id] = []
 
 # ------------------------------------------------------------
 # STEP 2: Simulate a power reading for a room
